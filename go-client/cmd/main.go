@@ -1,8 +1,8 @@
 package main
 
 import (
-	"api/internal/api"
-	"api/internal/sccclient"
+	"goclient/internal/sccclient"
+	"goclient/internal/service"
 )
 
 func main() {
@@ -15,5 +15,5 @@ func main() {
 		panic(err)
 	}
 
-	api.Start(c)
+	service.Start(c)
 }

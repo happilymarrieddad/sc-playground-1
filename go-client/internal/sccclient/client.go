@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/happilymarrieddad/socketcluster-client-go/scclient"
+	sccpkg "github.com/sacOO7/socketcluster-client-go/scclient"
 )
 
 type SCCWorkerClient interface {
@@ -18,13 +18,13 @@ type SCCWorkerClient interface {
 func NewSCCWorkerClient(sscWorkerURL string) (SCCWorkerClient, error) {
 	c := &sccWorkerClient{}
 
-	c.cl = scclient.New(sscWorkerURL)
+	c.cl = sccpkg.New(sscWorkerURL)
 
 	return c, nil
 }
 
 type sccWorkerClient struct {
-	cl scclient.Client
+	cl sccpkg.Client
 }
 
 func (c *sccWorkerClient) Connect() (err error) {
@@ -32,26 +32,26 @@ func (c *sccWorkerClient) Connect() (err error) {
 	wg.Add(1)
 	c.cl.SetBasicListener(
 		// onConnect
-		func(client scclient.Client) {
+		func(client sccpkg.Client) {
 			fmt.Println("api client connected to scc worker")
 		},
 		// onConnectError
-		func(client scclient.Client, e error) {
+		func(client sccpkg.Client, e error) {
 			fmt.Printf("Error: %s\n", e.Error())
 			err = e
 			wg.Done()
 		},
 		// onDisconnect
-		func(client scclient.Client, e error) {
+		func(client sccpkg.Client, e error) {
 			fmt.Printf("Error: %s\n", e.Error())
 		})
 	c.cl.SetAuthenticationListener(
 		// onSetAuthentication
-		func(client scclient.Client, token string) {
+		func(client sccpkg.Client, token string) {
 			fmt.Println("Auth token received :", token)
 		},
 		// onAuthentication
-		func(client scclient.Client, isAuthenticated bool) {
+		func(client sccpkg.Client, isAuthenticated bool) {
 			fmt.Println("Client authenticated :", isAuthenticated)
 			wg.Done()
 		})

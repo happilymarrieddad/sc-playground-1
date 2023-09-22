@@ -1,9 +1,10 @@
 package sccclient_test
 
 import (
-	. "api/internal/sccclient"
 	"encoding/json"
 	"time"
+
+	. "goclient/internal/sccclient"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

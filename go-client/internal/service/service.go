@@ -1,7 +1,8 @@
-package api
+package service
 
 import (
-	"api/internal/sccclient"
+	"fmt"
+	"goclient/internal/sccclient"
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
@@ -23,7 +24,8 @@ func Start(c sccclient.SCCWorkerClient) error {
 		spew.Dump(data)
 	})
 
-	r.Run()
+	port := 8081
+	r.Run(fmt.Sprintf(":%d", port))
 
 	return nil
 }
