@@ -1,0 +1,50 @@
+version: "3"
+
+services:
+  sc-state:
+    image: socketcluster/scc-state:v9.1.1
+    platform: linux/amd64
+    ports:
+      - "7777:7777"
+  sc-broker-1:
+    image: socketcluster/scc-broker:v9.1.1
+    platform: linux/amd64
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
+    ports:
+      - "8888:8888"
+  sc-broker-2:
+    image: socketcluster/scc-broker:v9.1.1
+    platform: linux/amd64
+    ports:
+      - "8889:8888"
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
+  sc-broker-3:
+    image: socketcluster/scc-broker:v9.1.1
+    platform: linux/amd64
+    ports:
+      - "8890:8888"
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
+  sc-worker-1:
+    image: socketcluster/socketcluster:v18.1.2
+    platform: linux/amd64
+    ports:
+      - "8000:8000"
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
+  sc-worker-2:
+    image: socketcluster/socketcluster:v18.1.2
+    platform: linux/amd64
+    ports:
+      - "8001:8000"
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
+  sc-worker-3:
+    image: socketcluster/socketcluster:v18.1.2
+    platform: linux/amd64
+    ports:
+      - "8002:8000"
+    environment:
+      - SCC_STATE_SERVER_HOST=sc-state
