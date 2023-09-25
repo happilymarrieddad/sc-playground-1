@@ -28,23 +28,32 @@ services:
     environment:
       - SCC_STATE_SERVER_HOST=sc-state
   sc-worker-1:
-    image: socketcluster/socketcluster:v18.1.2
+    container_name: sc-worker-1
     platform: linux/amd64
-    ports:
-      - "8000:8000"
+    build:
+      context: ../
+      dockerfile: Dockerfile
     environment:
       - SCC_STATE_SERVER_HOST=sc-state
+    ports:
+      - 8000:8000
   sc-worker-2:
-    image: socketcluster/socketcluster:v18.1.2
+    container_name: sc-worker-2
     platform: linux/amd64
-    ports:
-      - "8001:8000"
+    build:
+      context: ../
+      dockerfile: Dockerfile
     environment:
       - SCC_STATE_SERVER_HOST=sc-state
+    ports:
+      - 8001:8000
   sc-worker-3:
-    image: socketcluster/socketcluster:v18.1.2
+    container_name: sc-worker-3
     platform: linux/amd64
-    ports:
-      - "8002:8000"
+    build:
+      context: ../
+      dockerfile: Dockerfile
     environment:
       - SCC_STATE_SERVER_HOST=sc-state
+    ports:
+      - 8002:8000

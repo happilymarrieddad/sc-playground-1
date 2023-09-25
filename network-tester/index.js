@@ -1,25 +1,39 @@
 const socketClusterClient = require('socketcluster-client');
 
-const conn = socketClusterClient.create({
+let socket = socketClusterClient.create({
     hostname: 'localhost',
     port: 8000
 });
-const socket = conn.transport.socket;
 
-socket.on(conn.OPEN, () => {
-    console.log('connection open')
-    // Everyone listening gets this
-    //conn.transmitPublish('test', {data:1})
-})
-socket.on(conn.CONNECTING, () => {
-    console.log('connection connectiong')
-})
-socket.on(conn.CLOSED, () => {
-    console.log('connection closed')
-})
-socket.on(conn.PENDING, () => {
-    console.log('connection pending')
-})
-socket.on(conn.AUTHENTICATED, () => {
-    console.log('connection authenticated')
-})
+let socket2 = socketClusterClient.create({
+    hostname: 'localhost',
+    port: 8001
+});
+
+(async () => {
+    let myChannel = socket.subscribe('some-data');
+    let myChannel2 = socket2.subscribe('some-data');
+    
+    (async () => {
+        for await (let data of myChannel) {
+            console.log('socket1',data);
+        }
+    })();
+
+    (async () => {
+        for await (let data of myChannel2) {
+            console.log('socket2',data);
+        }
+    })();
+
+    let { response, error } = await socket.invoke('request', {data:9});
+    if (error != null) {
+        console.log(error);
+    } else {
+        console.log(response);
+    }
+
+    socket.transmitPublish('some-data', {data:1});
+})();
+
+
