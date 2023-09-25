@@ -11,8 +11,8 @@ let socket2 = socketClusterClient.create({
 });
 
 (async () => {
-    let myChannel = socket.subscribe('some-data');
-    let myChannel2 = socket2.subscribe('some-data');
+    let myChannel = socket.subscribe('create-users');
+    let myChannel2 = socket2.subscribe('create-users');
     
     (async () => {
         for await (let data of myChannel) {
@@ -25,15 +25,21 @@ let socket2 = socketClusterClient.create({
             console.log('socket2',data);
         }
     })();
+    
+    (async () => {
+        for await (let data of socket.listener('raw')) {
+            console.log('raw',data);
+        }
+    })()
 
-    let { response, error } = await socket.invoke('request', {data:9});
-    if (error != null) {
-        console.log(error);
-    } else {
-        console.log(response);
-    }
+    // let { response, error } = await socket.invoke('request', {data:9});
+    // if (error != null) {
+    //     console.log(error);
+    // } else {
+    //     console.log(response);
+    // }
 
-    socket.transmitPublish('some-data', {data:1});
+    // socket.transmitPublish('some-data', {data:1});
 })();
 
 

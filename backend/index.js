@@ -7,6 +7,7 @@ const path = require('path');
 const morgan = require('morgan');
 const uuid = require('uuid');
 const sccBrokerClient = require('scc-broker-client');
+const sql = require('./db.js');
 
 const ENVIRONMENT = process.env.ENV || 'dev';
 const SOCKETCLUSTER_PORT = process.env.SOCKETCLUSTER_PORT || 8000;
@@ -52,6 +53,76 @@ expressApp.get('/health-check', (req, res) => {
   res.status(200).send('OK');
 });
 
+(async () => {
+    try {
+        // CREATE PUBLICATION alltables FOR ALL TABLES
+        // https://www.npmjs.com/package/postgres#listen--notify
+        const { unsubscribe } = await sql.subscribe(
+            '*', 
+            /*
+            { id: '7' } {
+                command: 'insert',
+                relation: {
+                    schema: 'public',
+                    table: 'users',
+                    columns: [ [Object] ],
+                    keys: [ [Object] ]
+                },
+                key: undefined,
+                old: undefined
+            }
+            { id: '20' } {
+                command: 'update',
+                relation: {
+                    schema: 'public',
+                    table: 'users',
+                    columns: [ [Object] ],
+                    keys: [ [Object] ]
+                },
+                key: true,
+                old: { id: '5' }
+            }
+            { id: '7' } {
+                command: 'delete',
+                relation: {
+                    schema: 'public',
+                    table: 'users',
+                    columns: [ [Object] ],
+                    keys: [ [Object] ]
+                },
+                key: true,
+                old: undefined
+            }
+            */
+            (row, { command, relation, key, old }) => {
+                switch(command) {
+                    case 'insert':
+                        console.log('insert found')
+                        agServer.exchange.transmitPublish(`create-${relation.table}`, row);
+                        break;
+                    case 'update':
+                        console.log('update found')
+                        agServer.exchange.transmitPublish(`update-${relation.table}${row.id ? `-${row.id}` : ``}`, {
+                            new: row,
+                            old: old,
+                        });
+                        break;
+                    case 'delete':
+                        console.log('delete found')
+                        agServer.exchange.transmitPublish(`delete-${relation.table}${row.id ? `-${row.id}` : ``}`, row);
+                        break;
+                }
+            },
+            () => {
+                // Callback on initial connect and potential reconnects
+                console.log('connection lost/reconnected with DB');
+            }
+        )
+    } catch(err) {
+        console.error(err)
+    }
+})();
+
 // HTTP request handling loop.
 (async () => {
   for await (let requestData of httpServer.listener('request')) {
@@ -73,6 +144,22 @@ expressApp.get('/health-check', (req, res) => {
             });
         }
       })();
+
+    //   (async () => {
+    //     const { unsubscribe } = await sql.subscribe(
+    //         '*',
+    //         (row, { command, relation, key, old }) => {
+    //             socket.send(json.Stringify({
+    //                 command,
+    //                 new: row,
+    //                 old,
+    //             }));
+    //         },
+    //         () => {
+    //             console.log('connection lost/reconnected with DB inside socket');
+    //         }
+    //     )
+    //   })();
 
     }
 })();
