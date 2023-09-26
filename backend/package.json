@@ -18,6 +18,7 @@
     "scc-broker-client": "^9.0.3",
     "serve-static": "^1.15.0",
     "socketcluster-server": "^18.1.2",
+    "tiny-emitter": "^2.1.0",
     "uuid": "^9.0.1"
   }
 }

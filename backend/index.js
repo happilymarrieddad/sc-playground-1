@@ -8,6 +8,7 @@ const morgan = require('morgan');
 const uuid = require('uuid');
 const sccBrokerClient = require('scc-broker-client');
 const sql = require('./db.js');
+const eventHub = require('./eventHub.js');
 
 const ENVIRONMENT = process.env.ENV || 'dev';
 const SOCKETCLUSTER_PORT = process.env.SOCKETCLUSTER_PORT || 8000;
@@ -95,23 +96,7 @@ expressApp.get('/health-check', (req, res) => {
             }
             */
             (row, { command, relation, key, old }) => {
-                switch(command) {
-                    case 'insert':
-                        console.log('insert found')
-                        agServer.exchange.transmitPublish(`create-${relation.table}`, row);
-                        break;
-                    case 'update':
-                        console.log('update found')
-                        agServer.exchange.transmitPublish(`update-${relation.table}${row.id ? `-${row.id}` : ``}`, {
-                            new: row,
-                            old: old,
-                        });
-                        break;
-                    case 'delete':
-                        console.log('delete found')
-                        agServer.exchange.transmitPublish(`delete-${relation.table}${row.id ? `-${row.id}` : ``}`, row);
-                        break;
-                }
+                eventHub.$emit('sql-data', { channel: `create-${relation.table}`, command, relation, key, old });
             },
             () => {
                 // Callback on initial connect and potential reconnects
@@ -134,32 +119,63 @@ expressApp.get('/health-check', (req, res) => {
 (async () => {
     for await (let {socket} of agServer.listener('connection')) {
 
+      // (async () => {
+      //   // Set up a loop to handle and respond to RPCs for a procedure.
+      //   for await (let req of socket.procedure('request')) {
+      //       agServer.exchange.transmitPublish('some-data', {data:2});
+      //       req.end({
+      //           response: req.data,
+      //           error: 'some err'
+      //       });
+      //   }
+      // })();
+
       (async () => {
-        // Set up a loop to handle and respond to RPCs for a procedure.
-        for await (let req of socket.procedure('request')) {
-            agServer.exchange.transmitPublish('some-data', {data:2});
-            req.end({
-                response: req.data,
-                error: 'some err'
-            });
-        }
+        eventHub.$on('sql-data', ({ channel, command, relation, key, old }) => {
+            socket.send(json.Stringify({
+              channel,
+              command,
+              new: row,
+              old,
+            }));
+        });
+
+                // switch(command) {
+                //     case 'insert':
+                //         console.log(`insert found ${`create-${relation.table}`}`)
+                //         agServer.exchange.transmitPublish(`create-${relation.table}`, row);
+                //         break;
+                //     case 'update':
+                //       console.log(`update found ${`update-${relation.table}${row.id ? `-${row.id}` : ``}`}`)
+                //         agServer.exchange.transmitPublish(`update-${relation.table}${row.id ? `-${row.id}` : ``}`, {
+                //             new: row,
+                //             old: old,
+                //         });
+                //         break;
+                //     case 'delete':
+                //         console.log('delete found')
+                //         agServer.exchange.transmitPublish(`delete-${relation.table}${row.id ? `-${row.id}` : ``}`, row);
+                //         break;
+                // }
+
       })();
 
-    //   (async () => {
-    //     const { unsubscribe } = await sql.subscribe(
-    //         '*',
-    //         (row, { command, relation, key, old }) => {
-    //             socket.send(json.Stringify({
-    //                 command,
-    //                 new: row,
-    //                 old,
-    //             }));
-    //         },
-    //         () => {
-    //             console.log('connection lost/reconnected with DB inside socket');
-    //         }
-    //     )
-    //   })();
+      // (async () => {
+      //   const { unsubscribe } = await sql.subscribe(
+      //       '*',
+      //       (row, { command, relation, key, old }) => {
+      //           console.log(command,row, )
+      //           socket.send(json.Stringify({
+      //               command,
+      //               new: row,
+      //               old,
+      //           }));
+      //       },
+      //       () => {
+      //           console.log('connection lost/reconnected with DB inside socket');
+      //       }
+      //   )
+      // })();
 
     }
 })();
