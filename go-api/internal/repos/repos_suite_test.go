@@ -10,6 +10,7 @@ import (
 	. "api/internal/repos"
 	"api/internal/utils"
 
+	_ "github.com/golang/mock/mockgen/model"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"

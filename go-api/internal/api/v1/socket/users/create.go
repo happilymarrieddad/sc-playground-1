@@ -4,9 +4,10 @@ import (
 	"api/internal/repos"
 	"api/types"
 	"encoding/json"
+	"net/http"
 )
 
-func create(gr repos.GlobalRepo, sessionUser *types.User, data []byte) (interface{}, error) {
+func create(gr repos.GlobalRepo, sessionUser *types.User, data []byte) *types.WSResponse {
 	type CreateUser struct {
 		FirstName string `validate:"required" json:"firstName"`
 		LastName  string `validate:"required" json:"lastName"`
@@ -18,11 +19,17 @@ func create(gr repos.GlobalRepo, sessionUser *types.User, data []byte) (interfac
 
 	req := &CreateUser{}
 	if err := json.Unmarshal(data, req); err != nil {
-		return nil, err
+		return &types.WSResponse{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
 	}
 
 	if err := types.Validate(req); err != nil {
-		return nil, err
+		return &types.WSResponse{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
 	}
 
 	// TODO: allow admin users to pass in the customer_id
@@ -35,8 +42,14 @@ func create(gr repos.GlobalRepo, sessionUser *types.User, data []byte) (interfac
 	)
 
 	if err := gr.Users().Create(newUsr); err != nil {
-		return nil, err
+		return &types.WSResponse{
+			Status: http.StatusInternalServerError,
+			Error:  err.Error(),
+		}
 	}
 
-	return newUsr, nil
+	return &types.WSResponse{
+		Data:   newUsr,
+		Status: http.StatusOK,
+	}
 }

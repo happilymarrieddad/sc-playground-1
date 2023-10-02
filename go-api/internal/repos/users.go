@@ -2,6 +2,7 @@ package repos
 
 import (
 	"api/types"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ type UsersRepo interface {
 	Create(*types.User) error
 	GetByID(id int64) (*types.User, error)
 	GetByEmail(email string) (*types.User, error)
+	FindOrCreate(usr *types.User) (*types.User, error)
 }
 
 func NewUsersRepo(db *xorm.Engine) UsersRepo {
@@ -61,4 +63,21 @@ func (r *usersRepo) Create(newUsr *types.User) error {
 	}
 
 	return nil
+}
+
+func (r *usersRepo) FindOrCreate(usr *types.User) (*types.User, error) {
+	if usr == nil {
+		return nil, errors.New("must pass a user in")
+	}
+
+	existingUser, _ := r.GetByEmail(usr.Email)
+	if existingUser != nil && existingUser.ID > 0 {
+		return existingUser, nil
+	}
+
+	if err := r.Create(usr); err != nil {
+		return nil, err
+	}
+
+	return usr, nil
 }

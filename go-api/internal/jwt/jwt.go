@@ -3,6 +3,7 @@ package jwt
 import (
 	"api/types"
 	"crypto/rsa"
+	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"log"
@@ -48,13 +49,21 @@ func init() {
 }
 
 func NewToken(usr *types.User) string {
+	if usr == nil {
+		// This should never happen but it's okay because it will just create an invalid user
+		usr = new(types.User)
+	}
+
 	token := jwtpkg.New(jwtpkg.SigningMethodRS512)
 	claims := make(jwtpkg.MapClaims)
 	claims["exp"] = time.Now().Add(time.Hour * HOURS_IN_DAY * DAYS_IN_WEEK).Unix()
 	claims["iat"] = time.Now().Unix()
 	claims["id"] = usr.ID
 	usr.Password = ""
-	claims["user"] = usr
+
+	bts, _ := json.Marshal(usr)
+
+	claims["user"] = string(bts)
 	token.Claims = claims
 
 	tokenString, _ := token.SignedString(signKey)
@@ -78,8 +87,20 @@ func IsTokenValid(val string) (*types.User, error) {
 			return nil, errors.New("token is invalid")
 		}
 
-		//userID = int64(claims["id"].(float64))
-		usr := claims["user"].(*types.User)
+		usrBts, ok := claims["user"].(string)
+		if !ok {
+			return nil, errors.New("token is invalid")
+		}
+
+		usr := new(types.User)
+		if err = json.Unmarshal([]byte(usrBts), usr); err != nil {
+			return nil, err
+		}
+
+		if usr.ID == 0 {
+			// This will never happen but we want to make sure the user is valid
+			return nil, errors.New("token is invalid")
+		}
 
 		return usr, nil
 	case *jwtpkg.ValidationError:
